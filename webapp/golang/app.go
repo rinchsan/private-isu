@@ -22,6 +22,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/sessions"
 	"github.com/jmoiron/sqlx"
+	"github.com/kaz/pprotein/integration/standalone"
 )
 
 var (
@@ -830,6 +831,10 @@ func main() {
 	defer db.Close()
 
 	r := chi.NewRouter()
+
+	go func() {
+		standalone.Integrate(":6060")
+	}()
 
 	r.Get("/initialize", getInitialize)
 	r.Get("/login", getLogin)
