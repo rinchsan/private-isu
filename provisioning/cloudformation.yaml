@@ -89,6 +89,9 @@ Resources:
           curl -s https://github.com/$GITHUB_USER.keys >> /home/isucon/.ssh/authorized_keys
           chown -R isucon:isucon /home/isucon/.ssh
           chmod 600 /home/isucon/.ssh/authorized_keys
+      Tags:
+        - Key: Name
+          Value: private-isu-server
 
   BenchmarkerInstance:
     Type: AWS::EC2::Instance
@@ -108,6 +111,9 @@ Resources:
           curl -s https://github.com/$GITHUB_USER.keys >> /home/isucon/.ssh/authorized_keys
           chown -R isucon:isucon /home/isucon/.ssh
           chmod 600 /home/isucon/.ssh/authorized_keys
+      Tags:
+        - Key: Name
+          Value: private-isu-benchmarker
 
   ServerEIP:
     Type: AWS::EC2::EIP
