@@ -668,7 +668,7 @@ func postIndex(w http.ResponseWriter, r *http.Request) {
 		query,
 		me.ID,
 		mime,
-		filedata,
+		[]byte("dummy"),
 		r.FormValue("body"),
 	)
 	if err != nil {
