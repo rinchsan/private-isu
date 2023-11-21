@@ -47,7 +47,7 @@ Resources:
     Properties:
       InstanceType: c5.large
       KeyName: !Ref KeyPairName
-      ImageId: ami-0d92a4724cae6f07b
+      ImageId: ami-0582a2a7fbe79a30d
       SubnetId: !Ref SubnetId
       PrivateIpAddress: '192.168.1.30'
       SecurityGroupIds:
