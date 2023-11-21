@@ -46,16 +46,16 @@ type User struct {
 }
 
 type Post struct {
-	ID           int       `db:"id"`
-	UserID       int       `db:"user_id"`
-	Imgdata      []byte    `db:"imgdata"`
-	Body         string    `db:"body"`
-	Mime         string    `db:"mime"`
-	CreatedAt    time.Time `db:"created_at"`
-	CommentCount int
-	Comments     []Comment
-	User         User
-	CSRFToken    string
+	ID              int       `db:"id"`
+	UserID          int       `db:"user_id"`
+	Imgdata         []byte    `db:"imgdata"`
+	Body            string    `db:"body"`
+	Mime            string    `db:"mime"`
+	CreatedAt       time.Time `db:"created_at"`
+	UserAccountName string    `db:"user_account_name"`
+	CommentCount    int
+	Comments        []Comment
+	CSRFToken       string
 }
 
 type Comment struct {
@@ -206,19 +206,9 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 
 		p.Comments = comments
 
-		err = db.Get(&p.User, "SELECT * FROM `users` WHERE `id` = ?", p.UserID)
-		if err != nil {
-			return nil, err
-		}
-
 		p.CSRFToken = csrfToken
 
-		if p.User.DelFlg == 0 {
-			posts = append(posts, p)
-		}
-		if len(posts) >= postsPerPage {
-			break
-		}
+		posts = append(posts, p)
 	}
 
 	return posts, nil
@@ -397,7 +387,7 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 
 	results := []Post{}
 
-	err := db.Select(&results, "SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` ORDER BY `id` DESC")
+	err := db.Select(&results, "SELECT p.`id`, p.`user_id`, p.`body`, p.`mime`, p.`created_at`, u.account_name as user_account_name FROM `posts` as p join users as u on u.id = p.user_id where u.del_flg = 0 ORDER BY p.`created_at` DESC limit ?", postsPerPage)
 	if err != nil {
 		log.Print(err)
 		return
@@ -413,7 +403,7 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 		"imageURL": imageURL,
 	}
 
-	template.Must(template.New("layout.html").Funcs(fmap).ParseFiles(
+	if err := template.Must(template.New("layout.html").Funcs(fmap).ParseFiles(
 		getTemplPath("layout.html"),
 		getTemplPath("index.html"),
 		getTemplPath("posts.html"),
@@ -423,7 +413,10 @@ func getIndex(w http.ResponseWriter, r *http.Request) {
 		Me        User
 		CSRFToken string
 		Flash     string
-	}{posts, me, getCSRFToken(r), getFlash(w, r, "notice")})
+	}{posts, me, getCSRFToken(r), getFlash(w, r, "notice")}); err != nil {
+		log.Print(err)
+		return
+	}
 }
 
 func getAccountName(w http.ResponseWriter, r *http.Request) {
@@ -443,7 +436,7 @@ func getAccountName(w http.ResponseWriter, r *http.Request) {
 
 	results := []Post{}
 
-	err = db.Select(&results, "SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` WHERE `user_id` = ? ORDER BY `id` DESC", user.ID)
+	err = db.Select(&results, "SELECT p.`id`, p.`user_id`, p.`body`, p.`mime`, p.`created_at`, u.account_name as user_account_name FROM `posts` as p join users as u on u.id = p.user_id WHERE p.`user_id` = ? and u.del_flg = 0 ORDER BY p.`id` DESC", user.ID)
 	if err != nil {
 		log.Print(err)
 		return
@@ -531,7 +524,7 @@ func getPosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	results := []Post{}
-	err = db.Select(&results, "SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` WHERE `created_at` <= ? ORDER BY `id` DESC", t.Format(ISO8601Format))
+	err = db.Select(&results, "SELECT p.`id`, p.`user_id`, p.`body`, p.`mime`, p.`created_at`, u.account_name as user_account_name FROM `posts` as p join users as u on u.id = p.user_id WHERE p.`created_at` <= ? and u.del_flg = 0 ORDER BY p.`id` DESC", t.Format(ISO8601Format))
 	if err != nil {
 		log.Print(err)
 		return
@@ -567,7 +560,7 @@ func getPostsID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	results := []Post{}
-	err = db.Select(&results, "SELECT `id`, `user_id`, `mime`, `body`, `created_at` FROM `posts` WHERE `id` = ?", pid)
+	err = db.Select(&results, "SELECT p.`id`, p.`user_id`, p.`mime`, p.`body`, p.`created_at`, u.account_name as user_account_name FROM `posts` as p join users as u on u.id = p.user_id WHERE p.`id` = ? and u.del_flg = 0", pid)
 	if err != nil {
 		log.Print(err)
 		return
