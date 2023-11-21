@@ -1,0 +1,6 @@
+- name: Deploy webapp
+  become: true
+  copy:
+    src: ../webapp/golang/app
+    dest: /home/isucon/private_isu/webapp/golang/
+  notify: restart_webapp
