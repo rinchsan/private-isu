@@ -437,7 +437,7 @@ func getAccountName(w http.ResponseWriter, r *http.Request) {
 
 	results := []Post{}
 
-	err = db.Select(&results, "SELECT p.`id`, p.`user_id`, p.`body`, p.`mime`, p.`created_at`, u.account_name as user_account_name FROM `posts` as p join users as u on u.id = p.user_id WHERE p.`user_id` = ? and u.del_flg = 0 ORDER BY p.`id` DESC", user.ID)
+	err = db.Select(&results, "SELECT p.`id`, p.`user_id`, p.`body`, p.`mime`, p.`created_at`, u.account_name as user_account_name FROM `posts` as p join users as u on u.id = p.user_id WHERE p.`user_id` = ? and u.del_flg = 0 ORDER BY p.`id` DESC limit ?", user.ID, postsPerPage)
 	if err != nil {
 		log.Print(err)
 		return
@@ -525,7 +525,7 @@ func getPosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	results := []Post{}
-	err = db.Select(&results, "SELECT p.`id`, p.`user_id`, p.`body`, p.`mime`, p.`created_at`, u.account_name as user_account_name FROM `posts` as p join users as u on u.id = p.user_id WHERE p.`created_at` <= ? and u.del_flg = 0 ORDER BY p.`id` DESC", t.Format(ISO8601Format))
+	err = db.Select(&results, "SELECT p.`id`, p.`user_id`, p.`body`, p.`mime`, p.`created_at`, u.account_name as user_account_name FROM `posts` as p join users as u on u.id = p.user_id WHERE p.`created_at` <= ? and u.del_flg = 0 ORDER BY p.`id` DESC limit ?", t.Format(ISO8601Format), postsPerPage)
 	if err != nil {
 		log.Print(err)
 		return
@@ -561,7 +561,7 @@ func getPostsID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	results := []Post{}
-	err = db.Select(&results, "SELECT p.`id`, p.`user_id`, p.`mime`, p.`body`, p.`created_at`, u.account_name as user_account_name FROM `posts` as p join users as u on u.id = p.user_id WHERE p.`id` = ? and u.del_flg = 0", pid)
+	err = db.Select(&results, "SELECT p.`id`, p.`user_id`, p.`mime`, p.`body`, p.`created_at`, u.account_name as user_account_name FROM `posts` as p join users as u on u.id = p.user_id WHERE p.`id` = ? and u.del_flg = 0 limit ?", pid, postsPerPage)
 	if err != nil {
 		log.Print(err)
 		return
