@@ -193,8 +193,6 @@ func getFlash(w http.ResponseWriter, r *http.Request, key string) string {
 }
 
 func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, error) {
-	var posts []Post
-
 	postIDs := make([]int, len(results))
 	for i := range results {
 		postIDs[i] = results[i].ID
@@ -216,17 +214,16 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 		postIDComments[c.PostID] = append(postIDComments[c.PostID], c)
 	}
 
-	for _, p := range results {
-		p.Comments = postIDComments[p.ID]
-		p.CommentCount = len(p.Comments)
-		if !allComments && len(p.Comments) > 3 {
-			p.Comments = p.Comments[:3]
+	for i := range results {
+		results[i].Comments = postIDComments[results[i].ID]
+		results[i].CommentCount = len(results[i].Comments)
+		if !allComments && len(results[i].Comments) > 3 {
+			results[i].Comments = results[i].Comments[:3]
 		}
-		p.CSRFToken = csrfToken
-		posts = append(posts, p)
+		results[i].CSRFToken = csrfToken
 	}
 
-	return posts, nil
+	return results, nil
 }
 
 func imageURL(p Post) string {
