@@ -67,10 +67,6 @@ type Comment struct {
 	UserAccountName string    `db:"user_account_name"`
 }
 
-var fmap = template.FuncMap{
-	"imageURL": imageURL,
-}
-
 var (
 	getIndexTmpl *template.Template
 )
@@ -84,6 +80,9 @@ func init() {
 	store = gsm.NewMemcacheStore(memcacheClient, "iscogram_", []byte("sendagaya"))
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
+	fmap := template.FuncMap{
+		"imageURL": imageURL,
+	}
 	getIndexTmpl = template.Must(
 		template.New("layout.html").Funcs(fmap).ParseFiles(
 			getTemplPath("layout.html"),
