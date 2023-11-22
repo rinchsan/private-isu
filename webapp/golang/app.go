@@ -59,12 +59,12 @@ type Post struct {
 }
 
 type Comment struct {
-	ID        int       `db:"id"`
-	PostID    int       `db:"post_id"`
-	UserID    int       `db:"user_id"`
-	Comment   string    `db:"comment"`
-	CreatedAt time.Time `db:"created_at"`
-	User      User
+	ID              int       `db:"id"`
+	PostID          int       `db:"post_id"`
+	UserID          int       `db:"user_id"`
+	Comment         string    `db:"comment"`
+	CreatedAt       time.Time `db:"created_at"`
+	UserAccountName string    `db:"user_account_name"`
 }
 
 var fmap = template.FuncMap{
@@ -202,21 +202,13 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 			return nil, err
 		}
 
-		query := "SELECT * FROM `comments` WHERE `post_id` = ? ORDER BY `created_at` DESC"
+		query := "SELECT c.*, u.account_name as user_account_name FROM `comments` as c join users as u on u.id = c.user_id WHERE c.`post_id` = ? ORDER BY c.`created_at` DESC"
 		if !allComments {
 			query += " LIMIT 3"
 		}
 		var comments []Comment
-		err = db.Select(&comments, query, p.ID)
-		if err != nil {
+		if err := db.Select(&comments, query, p.ID); err != nil {
 			return nil, err
-		}
-
-		for i := 0; i < len(comments); i++ {
-			err := db.Get(&comments[i].User, "SELECT * FROM `users` WHERE `id` = ?", comments[i].UserID)
-			if err != nil {
-				return nil, err
-			}
 		}
 
 		// reverse
