@@ -104,7 +104,6 @@ func dbInitialize() {
 		"CREATE INDEX idx_comments_post_id_created_at ON comments (post_id, created_at DESC)",
 		"CREATE INDEX idx_posts_created_at ON posts (created_at DESC)",
 		"CREATE INDEX idx_comments_user_id ON comments (user_id)",
-		"CREATE INDEX idx_comments_post_id ON comments (post_id)",
 	}
 
 	for _, sql := range sqls {
@@ -197,11 +196,6 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 	var posts []Post
 
 	for _, p := range results {
-		err := db.Get(&p.CommentCount, "SELECT COUNT(*) AS `count` FROM `comments` WHERE `post_id` = ?", p.ID)
-		if err != nil {
-			return nil, err
-		}
-
 		query := "SELECT c.*, u.account_name as user_account_name FROM `comments` as c join users as u on u.id = c.user_id WHERE c.`post_id` = ? ORDER BY c.`created_at` DESC"
 		if !allComments {
 			query += " LIMIT 3"
@@ -217,6 +211,7 @@ func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, erro
 		}
 
 		p.Comments = comments
+		p.CommentCount = len(comments)
 
 		p.CSRFToken = csrfToken
 
