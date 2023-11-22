@@ -195,26 +195,34 @@ func getFlash(w http.ResponseWriter, r *http.Request, key string) string {
 func makePosts(results []Post, csrfToken string, allComments bool) ([]Post, error) {
 	var posts []Post
 
+	postIDs := make([]int, len(results))
+	for i := range results {
+		postIDs[i] = results[i].ID
+	}
+
+	query := "select c.*, u.account_name as user_account_name from comments as c join users as u on u.id = c.user_id where post_id in (?) order by c.created_at desc"
+	query, args, err := sqlx.In(query, postIDs)
+	if err != nil {
+		return nil, err
+	}
+	var comments []Comment
+	if err := db.Select(&comments, query, args...); err != nil {
+		return nil, err
+	}
+
+	postIDComments := map[int][]Comment{}
+	for i := len(comments) - 1; i >= 0; i-- {
+		c := comments[i]
+		postIDComments[c.PostID] = append(postIDComments[c.PostID], c)
+	}
+
 	for _, p := range results {
-		query := "SELECT c.*, u.account_name as user_account_name FROM `comments` as c join users as u on u.id = c.user_id WHERE c.`post_id` = ? ORDER BY c.`created_at` DESC"
-		if !allComments {
-			query += " LIMIT 3"
+		p.Comments = postIDComments[p.ID]
+		p.CommentCount = len(p.Comments)
+		if !allComments && len(p.Comments) > 3 {
+			p.Comments = p.Comments[:3]
 		}
-		var comments []Comment
-		if err := db.Select(&comments, query, p.ID); err != nil {
-			return nil, err
-		}
-
-		// reverse
-		for i, j := 0, len(comments)-1; i < j; i, j = i+1, j-1 {
-			comments[i], comments[j] = comments[j], comments[i]
-		}
-
-		p.Comments = comments
-		p.CommentCount = len(comments)
-
 		p.CSRFToken = csrfToken
-
 		posts = append(posts, p)
 	}
 
